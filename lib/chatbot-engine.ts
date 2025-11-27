@@ -1,4 +1,4 @@
-import { CHAT_RULES, type ChatRule } from "./seed-data"
+import { CHAT_RULES } from "./seed-data"
 import { fuzzyMatch } from "./utils"
 
 export interface ChatMessage {
@@ -9,7 +9,7 @@ export interface ChatMessage {
 }
 
 export class ChatbotEngine {
-  private rules: ChatRule[]
+  private rules: any
 
   constructor() {
     this.rules = CHAT_RULES
@@ -26,7 +26,7 @@ export class ChatbotEngine {
     await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000))
 
     // Find matching rule
-    const matchedRule = this.rules.find((rule) => fuzzyMatch(userMessage, rule.keywords))
+    const matchedRule = this.rules.find((rule:any) => fuzzyMatch(userMessage, rule.keywords))
 
     if (matchedRule) {
       return {

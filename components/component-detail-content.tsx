@@ -15,26 +15,38 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
   const tabs = ["Overview", "How It Works", "Applications", "Resources"]
 
   const getDemo = () => {
+    // Show both demos for resistor (color code + Ohm's law)
     if (component.slug === "resistor") {
-      return <ResistorColorCode />
+      return (
+        <div className="space-y-6">
+          <ResistorColorCode />
+          <OhmsLawSimulator />
+        </div>
+      )
     }
-    if (component.slug === "resistor" || component.slug === "capacitor") {
+
+    // Capacitor (or others that support the simulator)
+    if (component.slug === "capacitor") {
       return <OhmsLawSimulator />
     }
+
     return null
   }
 
   return (
     <div>
       {/* Back button */}
-      <Link href="/components">
-        <motion.button
-          whileHover={{ x: -4 }}
-          className="flex items-center gap-2 text-primary hover:text-accent transition-colors mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Components
-        </motion.button>
+      <Link href="/components" legacyBehavior>
+        <a>
+          <motion.button
+            type="button"
+            whileHover={{ x: -4 }}
+            className="flex items-center gap-2 text-primary hover:text-accent transition-colors mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Components
+          </motion.button>
+        </a>
       </Link>
 
       {/* Header */}
@@ -44,7 +56,7 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
         className="glass border-glow-blue p-8 rounded-xl mb-8"
       >
         <div className="flex items-start gap-6 mb-6">
-          <motion.div 
+          <motion.div
             className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center neon-glow-blue"
             whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ type: "spring", stiffness: 300 }}
@@ -52,12 +64,12 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
             <span className="text-4xl font-bold text-white">{component.symbol}</span>
           </motion.div>
           <div className="flex-1">
-            <h1 
+            <h1
               className="text-4xl md:text-5xl font-bold mb-3 text-foreground bg-clip-text text-transparent"
-              style={{ 
-                backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary), var(--accent))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+              style={{
+                backgroundImage: "linear-gradient(to right, var(--primary), var(--secondary), var(--accent))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
               {component.name}
@@ -86,8 +98,9 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
             </motion.div>
           ))}
         </div>
+
         {component.typicalValues && (
-          <motion.div 
+          <motion.div
             className="mt-6 p-5 bg-gradient-to-br from-primary/10 to-neon-cyan/10 border-glow-gold rounded-lg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -107,26 +120,23 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
               key={tab}
               className={({ selected }) =>
                 `px-6 py-3 font-semibold transition-all relative ${
-                  selected
-                    ? ""
-                    : "text-foreground/60 hover:text-foreground"
+                  selected ? "" : "text-foreground/60 hover:text-foreground"
                 }`
               }
-              style={({ selected }) => selected ? { color: 'var(--primary)' } : {}}
             >
               {({ selected }) => (
-                <>
+                <span style={selected ? { color: "var(--primary)" } : undefined} className="inline-flex items-center gap-2">
                   {tab}
                   {selected && (
                     <motion.div
                       className="absolute bottom-0 left-0 right-0 h-0.5"
-                      style={{ backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary))' }}
+                      style={{ backgroundImage: "linear-gradient(to right, var(--primary), var(--secondary))" }}
                       layoutId="activeTab"
                       initial={false}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
-                </>
+                </span>
               )}
             </Tab>
           ))}
@@ -134,36 +144,26 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
 
         <Tab.Panels>
           <Tab.Panel className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass border-glow p-8 rounded-xl"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass border-glow p-8 rounded-xl">
               <h3 className="text-2xl font-bold mb-6 text-foreground">About this Component</h3>
               <p className="text-foreground/90 leading-relaxed mb-6 text-lg">{component.overview}</p>
+
               <h4 className="text-xl font-semibold mb-4 text-primary border-b border-primary/30 pb-2">Description</h4>
               <p className="text-foreground/90 leading-relaxed text-base">{component.description}</p>
             </motion.div>
           </Tab.Panel>
 
           <Tab.Panel>
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              className="space-y-6"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {getDemo() ? (
-                <motion.div 
+                <motion.div
                   className="glass border-glow-gold p-8 rounded-xl"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 }}
                 >
                   <h3 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-2">
-                    <motion.span
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    >
+                    <motion.span animate={{ rotate: [0, 360] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}>
                       ⚡
                     </motion.span>
                     Interactive Simulator
@@ -172,7 +172,7 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
                 </motion.div>
               ) : null}
 
-              <motion.div 
+              <motion.div
                 className="glass border-glow p-8 rounded-xl"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -194,11 +194,7 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
           </Tab.Panel>
 
           <Tab.Panel>
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              className="space-y-4"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground mb-6">Practical Applications</h3>
               {component.applications && component.applications.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-4">
@@ -212,18 +208,12 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
                       whileHover={{ scale: 1.03, y: -3 }}
                     >
                       <p className="font-bold text-lg text-accent mb-2">{app}</p>
-                      <p className="text-sm text-foreground/80">
-                        Common use case in electronics projects and industrial applications.
-                      </p>
+                      <p className="text-sm text-foreground/80">Common use case in electronics projects and industrial applications.</p>
                     </motion.div>
                   ))}
                 </div>
               ) : (
-                <motion.div 
-                  className="glass border-glow p-5 rounded-xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
+                <motion.div className="glass border-glow p-5 rounded-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <p className="text-foreground/70">Applications data for this component coming soon.</p>
                 </motion.div>
               )}
@@ -231,11 +221,7 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
           </Tab.Panel>
 
           <Tab.Panel>
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              className="space-y-4"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground mb-6">Resources & Documentation</h3>
               <div className="space-y-3">
                 {[
@@ -255,10 +241,10 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{resource.icon}</span>
                       <div>
-                        <p 
+                        <p
                           className="font-bold text-primary transition-colors"
-                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--secondary)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--primary)")}
                         >
                           {resource.title}
                         </p>
@@ -275,3 +261,5 @@ export function ComponentDetailContent({ component }: ComponentDetailContentProp
     </div>
   )
 }
+
+export default ComponentDetailContent

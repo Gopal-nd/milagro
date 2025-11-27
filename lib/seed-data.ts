@@ -1,4 +1,4 @@
-import type { ChatRule } from "./path-to-chat-rule" // Assuming ChatRule is imported from another file
+// import type { ChatRule } from "./path-to-chat-rule" // Assuming ChatRule is imported from another file
 
 export interface Component {
   id: string
@@ -1223,7 +1223,7 @@ export const TUTORIALS: Tutorial[] = [
   },
 ]
 
-export const CHAT_RULES: ChatRule[] = [
+export const CHAT_RULES: any = [
   {
     keywords: ["resistor", "resistance", "ohm"],
     response:

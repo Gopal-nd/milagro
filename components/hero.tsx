@@ -71,7 +71,7 @@ export function Hero() {
         className="relative z-10 max-w-6xl mx-auto px-4 text-center"
       >
         {/* Badge with pulse animation */}
-        <motion.div variants={itemVariants} className="mb-8 flex justify-center">
+        <motion.div variants={itemVariants as any} className="mb-8 flex justify-center">
           <motion.div
             className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full border backdrop-blur-md"
             style={{ borderColor: 'rgba(0, 188, 212, 0.5)' }}
@@ -89,7 +89,7 @@ export function Hero() {
         </motion.div>
 
         {/* Main heading with animated gradient */}
-        <motion.div variants={itemVariants} className="mb-8">
+        <motion.div variants={itemVariants as any} className="mb-8">
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-tight">
             <span className="block text-white mb-2">Master</span>
             <motion.span
@@ -110,7 +110,7 @@ export function Hero() {
         </motion.div>
 
         {/* Enhanced subheading */}
-        <motion.div variants={itemVariants} className="mb-12">
+        <motion.div variants={itemVariants as any} className="mb-12">
           <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed font-light">
             Explore 20 comprehensive topics covering everything from basic circuits to advanced embedded systems.
             Interact with{" "}
@@ -130,7 +130,7 @@ export function Hero() {
         </motion.div>
 
         {/* CTA Buttons with enhanced hover effects */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
+        <motion.div variants={itemVariants as any} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
           <Link href="/learn">
             <motion.button
               className="px-8 py-4 border text-white hover:shadow-2xl rounded-lg font-bold transition-all flex items-center gap-3 group"
@@ -180,7 +180,7 @@ export function Hero() {
         </motion.div>
 
         {/* Key features with enhanced design */}
-        <motion.div variants={itemVariants} className="grid md:grid-cols-4 gap-4 mt-20">
+        <motion.div variants={itemVariants as any} className="grid md:grid-cols-4 gap-4 mt-20">
           {[
             {
               icon: "📚",
@@ -209,7 +209,7 @@ export function Hero() {
           ].map((feature, idx) => (
             <motion.div
               key={idx}
-              variants={floatingVariants}
+              variants={floatingVariants as any}
               className="glass p-6 rounded-xl border transition-all group"
               style={{ borderColor: 'rgba(0, 188, 212, 0.2)' }}
               onMouseEnter={(e) => {
