@@ -73,7 +73,8 @@ export function Hero() {
         {/* Badge with pulse animation */}
         <motion.div variants={itemVariants} className="mb-8 flex justify-center">
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full border border-neon-blue/50 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full border backdrop-blur-md"
+            style={{ borderColor: 'rgba(0, 188, 212, 0.5)' }}
             whileHover={{ borderColor: "rgba(0, 188, 212, 1)" }}
             transition={{ duration: 0.3 }}
           >
@@ -81,9 +82,9 @@ export function Hero() {
               animate={{ rotate: 360 }}
               transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             >
-              <Microscope className="w-4 h-4 text-neon-blue" />
+              <Microscope className="w-4 h-4" style={{ color: 'var(--primary)' }} />
             </motion.div>
-            <span className="text-sm text-neon-blue font-medium">Interactive Electronics Lab</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--primary)' }}>Interactive Electronics Lab</span>
           </motion.div>
         </motion.div>
 
@@ -92,7 +93,12 @@ export function Hero() {
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-tight">
             <span className="block text-white mb-2">Master</span>
             <motion.span
-              className="block bg-gradient-to-r from-neon-blue via-neon-cyan to-neon-gold bg-clip-text text-transparent py-2"
+              className="block bg-clip-text text-transparent py-2"
+              style={{ 
+                backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary), var(--accent))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
               animate={{
                 backgroundPosition: ["0%", "100%", "0%"],
               }}
@@ -108,10 +114,17 @@ export function Hero() {
           <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed font-light">
             Explore 20 comprehensive topics covering everything from basic circuits to advanced embedded systems.
             Interact with{" "}
-            <span className="font-semibold bg-gradient-to-r from-neon-blue to-neon-cyan bg-clip-text text-transparent">
+            <span 
+              className="font-semibold bg-clip-text text-transparent"
+              style={{ 
+                backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
               3D models
             </span>
-            , run real-time simulations, and chat with <span className="font-semibold text-neon-gold">Electro AI</span>{" "}
+            , run real-time simulations, and chat with <span className="font-semibold text-accent">Electro AI</span>{" "}
             powered by Google Gemini for instant learning support.
           </p>
         </motion.div>
@@ -120,7 +133,11 @@ export function Hero() {
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
           <Link href="/learn">
             <motion.button
-              className="px-8 py-4 bg-gradient-to-r from-neon-blue to-neon-cyan/70 border border-neon-blue text-white hover:shadow-2xl rounded-lg font-bold transition-all flex items-center gap-3 group"
+              className="px-8 py-4 border text-white hover:shadow-2xl rounded-lg font-bold transition-all flex items-center gap-3 group"
+              style={{ 
+                backgroundImage: 'linear-gradient(to right, var(--primary), oklch(from var(--secondary) l c h / 0.7))',
+                borderColor: 'var(--primary)'
+              }}
               whileHover={{ scale: 1.08, y: -3 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -135,7 +152,19 @@ export function Hero() {
           </Link>
           <Link href="/chat">
             <motion.button
-              className="px-8 py-4 border-2 border-neon-cyan/60 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan rounded-lg font-bold transition-all flex items-center gap-3 backdrop-blur-sm"
+              className="px-8 py-4 border-2 rounded-lg font-bold transition-all flex items-center gap-3 backdrop-blur-sm"
+              style={{ 
+                borderColor: 'oklch(from var(--secondary) l c h / 0.6)',
+                color: 'var(--secondary)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'oklch(from var(--secondary) l c h / 0.1)'
+                e.currentTarget.style.borderColor = 'var(--secondary)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.borderColor = 'oklch(from var(--secondary) l c h / 0.6)'
+              }}
               whileHover={{ scale: 1.08, y: -3 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -181,7 +210,16 @@ export function Hero() {
             <motion.div
               key={idx}
               variants={floatingVariants}
-              className="glass p-6 rounded-xl border border-neon-blue/20 hover:border-neon-blue/60 transition-all group hover:bg-neon-blue/5"
+              className="glass p-6 rounded-xl border transition-all group"
+              style={{ borderColor: 'rgba(0, 188, 212, 0.2)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(0, 188, 212, 0.6)'
+                e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.05)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(0, 188, 212, 0.2)'
+                e.currentTarget.style.backgroundColor = ''
+              }}
               whileHover={{ y: -8, scale: 1.05 }}
             >
               <motion.div
@@ -207,7 +245,7 @@ export function Hero() {
         <div className="text-xs text-foreground/50 flex flex-col items-center gap-3">
           <span>Scroll to explore</span>
           <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}>
-            <Zap className="w-5 h-5 text-neon-blue" />
+            <Zap className="w-5 h-5" style={{ color: 'var(--primary)' }} />
           </motion.div>
         </div>
       </motion.div>

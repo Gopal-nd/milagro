@@ -46,7 +46,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
+    <main className="min-h-screen mt-10 bg-background flex flex-col">
       <Header />
 
       <div className="flex-1 container mx-auto max-w-3xl px-4 py-8 flex flex-col">
@@ -64,8 +64,8 @@ export default function ChatPage() {
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                     msg.role === "user"
-                      ? "bg-neon-blue/20 border border-neon-blue/50 text-foreground"
-                      : "bg-neon-cyan/10 border border-neon-cyan/50 text-foreground"
+                      ? "border text-foreground"
+                      : "border text-foreground"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -76,11 +76,17 @@ export default function ChatPage() {
 
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-neon-cyan/10 border border-neon-cyan/50 rounded-lg px-4 py-3">
+              <div 
+                className="border rounded-lg px-4 py-3"
+                style={{ 
+                  backgroundColor: 'oklch(from var(--secondary) l c h / 0.1)',
+                  borderColor: 'oklch(from var(--secondary) l c h / 0.5)'
+                }}
+              >
                 <div className="flex gap-2">
-                  <div className="w-2 h-2 bg-neon-cyan rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-neon-cyan rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-neon-cyan rounded-full animate-bounce delay-200" />
+                  <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'var(--secondary)' }} />
+                  <div className="w-2 h-2 rounded-full animate-bounce delay-100" style={{ backgroundColor: 'var(--secondary)' }} />
+                  <div className="w-2 h-2 rounded-full animate-bounce delay-200" style={{ backgroundColor: 'var(--secondary)' }} />
                 </div>
               </div>
             </motion.div>
@@ -98,13 +104,21 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask about electronics, circuits, Arduino, IoT..."
-              className="flex-1 bg-input rounded-lg px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-neon-blue/50"
+              className="flex-1 bg-input rounded-lg px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': 'oklch(from var(--primary) l c h / 0.5)' } as React.CSSProperties}
               disabled={loading}
             />
             <motion.button
               onClick={handleSend}
               disabled={loading}
-              className="bg-neon-blue/20 border border-neon-blue text-neon-blue px-6 py-2 rounded-lg font-semibold hover:bg-neon-blue/30 disabled:opacity-50 transition-all"
+              className="border px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-all"
+              style={{ 
+                backgroundColor: 'oklch(from var(--primary) l c h / 0.2)',
+                borderColor: 'var(--primary)',
+                color: 'var(--primary)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'oklch(from var(--primary) l c h / 0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'oklch(from var(--primary) l c h / 0.2)'}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

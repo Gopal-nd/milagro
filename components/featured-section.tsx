@@ -22,16 +22,26 @@ export function FeaturedSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              whileHover={{ y: -5 }}
-              className="glass p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+              whileHover={{ y: -8, scale: 1.03 }}
+              className="glass border-glow-blue p-6 rounded-xl hover:border-glow-cyan transition-all group cursor-pointer"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center mb-4 neon-glow-blue group-hover:scale-110 transition-transform">
+              <motion.div 
+                className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center mb-4 neon-glow-blue"
+                whileHover={{ scale: 1.2, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <span className="text-lg font-bold text-white">{comp.symbol}</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{comp.name}</h3>
-              <p className="text-sm text-foreground/60 mb-4">{comp.shortDescription}</p>
-              <div className="flex items-center text-primary text-sm font-medium group-hover:gap-2 transition-all">
-                Learn more <ArrowRight className="w-4 h-4 ml-1" />
+              </motion.div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">{comp.name}</h3>
+              <p className="text-sm text-foreground/80 mb-4 leading-relaxed">{comp.shortDescription}</p>
+              <div className="flex items-center text-primary text-sm font-semibold group-hover:gap-2 transition-all">
+                Learn more 
+                <motion.div
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </motion.div>
               </div>
             </motion.div>
           ))}
@@ -48,19 +58,19 @@ export function FeaturedSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="glass p-8 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group cursor-pointer"
+              whileHover={{ scale: 1.03, y: -5 }}
+              className="glass border-glow-gold p-8 rounded-xl hover:border-glow-cyan transition-all group cursor-pointer"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="inline-block px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium mb-2">
+                  <div className="inline-block px-3 py-1 bg-accent/20 border border-accent/50 text-accent rounded-full text-xs font-semibold mb-3">
                     {tutorial.difficulty}
                   </div>
-                  <h3 className="text-xl font-semibold">{tutorial.title}</h3>
+                  <h3 className="text-xl font-bold text-foreground">{tutorial.title}</h3>
                 </div>
               </div>
-              <p className="text-foreground/60 mb-4">{tutorial.description}</p>
-              <p className="text-sm text-accent font-medium">{tutorial.duration}</p>
+              <p className="text-foreground/80 mb-4 leading-relaxed">{tutorial.description}</p>
+              <p className="text-sm text-accent font-semibold">{tutorial.duration}</p>
             </motion.div>
           ))}
         </div>

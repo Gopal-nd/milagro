@@ -41,7 +41,7 @@ If unsure, suggest learning resources or related topics.`
           systemInstruction: {
             parts: [
               {
-                text: systemPrompt,
+                text: systemPrompt + " You are a helpful assistant that can answer questions about electronics and programming. and give response in short answer",
               },
             ],
           },

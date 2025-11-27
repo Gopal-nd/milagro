@@ -54,8 +54,8 @@
 }
 
 @theme inline {
-  --font-sans: "Geist", "Geist Fallback";
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Inter", "Fira Code", "Consolas", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -72,6 +72,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
+  --color-neon-blue: var(--neon-blue);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-gold: var(--neon-gold);
   --radius: var(--radius);
 }
 
@@ -81,35 +84,88 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   html {
     color-scheme: dark;
   }
+  
+  /* Ensure text is always visible */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground;
+    font-weight: 700;
+  }
+  
+  p {
+    @apply text-foreground/90;
+  }
+  
+  /* Better link visibility */
+  a {
+    @apply text-foreground/90;
+  }
+  
+  a:hover {
+    @apply text-primary;
+  }
 }
 
-/* Glassmorphism utilities */
+/* Glassmorphism utilities with better borders */
 .glass {
-  @apply backdrop-blur-md bg-white/5 border border-white/10 rounded-lg;
+  @apply backdrop-blur-md bg-white/5 border border-white/20 rounded-lg;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s ease;
+}
+
+.glass:hover {
+  @apply border-white/30;
+  box-shadow: 0 8px 32px 0 rgba(0, 188, 212, 0.2);
 }
 
 .glass-dark {
-  @apply backdrop-blur-md bg-black/30 border border-white/10 rounded-lg;
+  @apply backdrop-blur-md bg-black/30 border border-white/20 rounded-lg;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Neon glow effects */
+/* Enhanced border utilities */
+.border-glow {
+  border-width: 2px;
+  border-color: rgba(0, 188, 212, 0.3);
+  box-shadow: 0 0 10px rgba(0, 188, 212, 0.3), inset 0 0 10px rgba(0, 188, 212, 0.1);
+}
+
+.border-glow-blue {
+  border-width: 2px;
+  border-color: rgba(0, 188, 212, 0.5);
+  box-shadow: 0 0 15px rgba(0, 188, 212, 0.4), inset 0 0 15px rgba(0, 188, 212, 0.1);
+}
+
+.border-glow-cyan {
+  border-width: 2px;
+  border-color: rgba(102, 187, 206, 0.5);
+  box-shadow: 0 0 15px rgba(102, 187, 206, 0.4), inset 0 0 15px rgba(102, 187, 206, 0.1);
+}
+
+.border-glow-gold {
+  border-width: 2px;
+  border-color: rgba(255, 202, 40, 0.5);
+  box-shadow: 0 0 15px rgba(255, 202, 40, 0.4), inset 0 0 15px rgba(255, 202, 40, 0.1);
+}
+
+/* Neon glow effects - enhanced */
 .neon-glow-blue {
-  @apply shadow-[0_0_20px_rgba(0,188,212,0.3)];
+  box-shadow: 0 0 20px rgba(0, 188, 212, 0.5), 0 0 40px rgba(0, 188, 212, 0.3), 0 0 60px rgba(0, 188, 212, 0.1);
 }
 
 .neon-glow-gold {
-  @apply shadow-[0_0_20px_rgba(255,202,40,0.3)];
+  box-shadow: 0 0 20px rgba(255, 202, 40, 0.5), 0 0 40px rgba(255, 202, 40, 0.3), 0 0 60px rgba(255, 202, 40, 0.1);
 }
 
 .neon-glow-cyan {
-  @apply shadow-[0_0_20px_rgba(102,187,206,0.3)];
+  box-shadow: 0 0 20px rgba(102, 187, 206, 0.5), 0 0 40px rgba(102, 187, 206, 0.3), 0 0 60px rgba(102, 187, 206, 0.1);
 }
 
-/* Animated border */
+/* Animated border effects */
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;
@@ -119,8 +175,125 @@
   }
 }
 
+@keyframes border-pulse {
+  0%, 100% {
+    border-color: rgba(0, 188, 212, 0.3);
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+  }
+  50% {
+    border-color: rgba(0, 188, 212, 0.8);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .shimmer {
   animation: shimmer 2s infinite;
   background: linear-gradient(to right, rgba(0, 188, 212, 0.1), rgba(255, 202, 40, 0.2), rgba(0, 188, 212, 0.1));
   background-size: 1000px 100%;
+}
+
+.border-pulse {
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* MDX-like content formatting */
+.prose {
+  @apply text-foreground/90;
+}
+
+.prose h1 {
+  @apply text-4xl font-bold mb-4 text-foreground;
+}
+
+.prose h2 {
+  @apply text-3xl font-bold mb-3 text-foreground mt-8;
+}
+
+.prose h3 {
+  @apply text-2xl font-semibold mb-2 text-foreground mt-6;
+}
+
+.prose h4 {
+  @apply text-xl font-semibold mb-2 text-foreground mt-4;
+}
+
+.prose p {
+  @apply mb-4 text-foreground/90 leading-relaxed;
+}
+
+.prose ul, .prose ol {
+  @apply mb-4 ml-6 text-foreground/90;
+}
+
+.prose li {
+  @apply mb-2 text-foreground/90;
+}
+
+.prose code {
+  @apply bg-muted/50 px-2 py-1 rounded text-sm font-mono text-primary;
+  border: 1px solid rgba(0, 188, 212, 0.3);
+}
+
+.prose pre {
+  @apply bg-muted/50 p-4 rounded-lg overflow-x-auto mb-4;
+  border: 1px solid rgba(0, 188, 212, 0.3);
+}
+
+.prose pre code {
+  @apply bg-transparent p-0 border-0;
+}
+
+.prose blockquote {
+  @apply border-l-4 pl-4 italic text-foreground/80 my-4;
+  border-color: rgba(0, 188, 212, 0.5);
+}
+
+.prose strong {
+  @apply font-bold text-foreground;
+}
+
+.prose a {
+  @apply text-primary underline;
+  color: var(--primary);
+}
+
+.prose a:hover {
+  color: var(--secondary);
+}
+
+.prose table {
+  @apply w-full border-collapse mb-4;
+}
+
+.prose th, .prose td {
+  @apply border border-border/50 px-4 py-2 text-foreground/90;
+}
+
+.prose th {
+  @apply bg-muted/50 font-semibold;
 }

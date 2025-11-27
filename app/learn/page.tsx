@@ -66,11 +66,16 @@ export default function LearnPage() {
               <div className="flex flex-wrap gap-2">
                 <motion.button
                   onClick={() => setSelectedCategory("all")}
-                  className={`px-4 py-2 rounded-lg transition-all ${
+                  className={`px-4 py-2 rounded-lg transition-all border ${
                     selectedCategory === "all"
-                      ? "bg-neon-blue/30 border-neon-blue text-neon-blue"
+                      ? ""
                       : "bg-muted border-border text-muted-foreground hover:border-muted-foreground"
-                  } border`}
+                  }`}
+                  style={selectedCategory === "all" ? {
+                    backgroundColor: 'oklch(from var(--primary) l c h / 0.3)',
+                    borderColor: 'var(--primary)',
+                    color: 'var(--primary)'
+                  } : {}}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -80,11 +85,16 @@ export default function LearnPage() {
                   <motion.button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-lg transition-all ${
+                    className={`px-4 py-2 rounded-lg transition-all border ${
                       selectedCategory === cat
-                        ? "bg-neon-blue/30 border-neon-blue text-neon-blue"
+                        ? ""
                         : "bg-muted border-border text-muted-foreground hover:border-muted-foreground"
-                    } border`}
+                    }`}
+                    style={selectedCategory === cat ? {
+                      backgroundColor: 'oklch(from var(--primary) l c h / 0.3)',
+                      borderColor: 'var(--primary)',
+                      color: 'var(--primary)'
+                    } : {}}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -100,11 +110,16 @@ export default function LearnPage() {
               <div className="flex flex-wrap gap-2">
                 <motion.button
                   onClick={() => setSelectedDifficulty("all")}
-                  className={`px-4 py-2 rounded-lg transition-all ${
+                  className={`px-4 py-2 rounded-lg transition-all border ${
                     selectedDifficulty === "all"
-                      ? "bg-neon-cyan/30 border-neon-cyan text-neon-cyan"
+                      ? ""
                       : "bg-muted border-border text-muted-foreground hover:border-muted-foreground"
-                  } border`}
+                  }`}
+                  style={selectedDifficulty === "all" ? {
+                    backgroundColor: 'oklch(from var(--secondary) l c h / 0.3)',
+                    borderColor: 'var(--secondary)',
+                    color: 'var(--secondary)'
+                  } : {}}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -114,11 +129,16 @@ export default function LearnPage() {
                   <motion.button
                     key={diff}
                     onClick={() => setSelectedDifficulty(diff)}
-                    className={`px-4 py-2 rounded-lg transition-all capitalize ${
+                    className={`px-4 py-2 rounded-lg transition-all capitalize border ${
                       selectedDifficulty === diff
-                        ? "bg-neon-cyan/30 border-neon-cyan text-neon-cyan"
+                        ? ""
                         : "bg-muted border-border text-muted-foreground hover:border-muted-foreground"
-                    } border`}
+                    }`}
+                    style={selectedDifficulty === diff ? {
+                      backgroundColor: 'oklch(from var(--secondary) l c h / 0.3)',
+                      borderColor: 'var(--secondary)',
+                      color: 'var(--secondary)'
+                    } : {}}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -141,7 +161,12 @@ export default function LearnPage() {
               whileHover={{ y: -5 }}
             >
               <Link href={`/learn/${topic.slug}`}>
-                <div className="glass rounded-xl p-6 h-full hover:border-neon-blue/50 transition-colors cursor-pointer">
+                <div 
+                  className="glass rounded-xl p-6 h-full transition-colors cursor-pointer"
+                  style={{ borderColor: 'rgba(0, 188, 212, 0.2)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(0, 188, 212, 0.5)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(0, 188, 212, 0.2)'}
+                >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-bold text-lg text-foreground flex-1">{topic.title}</h3>
                     <span
@@ -164,12 +189,12 @@ export default function LearnPage() {
                     <ul className="text-xs text-muted-foreground space-y-1">
                       {topic.keyPoints.slice(0, 2).map((point, i) => (
                         <li key={i} className="flex items-start">
-                          <span className="text-neon-cyan mr-2">•</span>
+                          <span className="mr-2" style={{ color: 'var(--secondary)' }}>•</span>
                           <span>{point}</span>
                         </li>
                       ))}
                       {topic.keyPoints.length > 2 && (
-                        <li className="text-neon-cyan font-semibold">+{topic.keyPoints.length - 2} more</li>
+                        <li className="font-semibold" style={{ color: 'var(--secondary)' }}>+{topic.keyPoints.length - 2} more</li>
                       )}
                     </ul>
                   </div>

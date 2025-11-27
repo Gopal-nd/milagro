@@ -18,9 +18,22 @@ export default function ComponentsPage() {
       <Header />
 
       <section className="pt-32 pb-20 px-4 max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Component Library</h1>
-          <p className="text-lg text-foreground/60 max-w-2xl">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="mb-12"
+        >
+          <h1 
+            className="text-4xl md:text-5xl font-bold mb-4 text-foreground bg-clip-text text-transparent"
+            style={{ 
+              backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary), var(--accent))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
+            Component Library
+          </h1>
+          <p className="text-lg text-foreground/80 max-w-2xl leading-relaxed">
             Explore our comprehensive collection of electronic components with detailed explanations, interactive
             diagrams, and practical applications.
           </p>
@@ -33,28 +46,38 @@ export default function ComponentsPage() {
           transition={{ delay: 0.1 }}
           className="flex flex-wrap gap-3 mb-12"
         >
-          <button
+          <motion.button
             onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
               selectedCategory === null
-                ? "bg-primary text-primary-foreground neon-glow-blue"
-                : "glass border border-primary/20 hover:border-primary/40"
+                ? "text-white border-glow-blue"
+                : "glass border-glow-blue hover:border-glow-cyan text-foreground"
             }`}
+            style={selectedCategory === null ? { 
+              backgroundImage: 'linear-gradient(to right, var(--primary), var(--secondary))'
+            } : {}}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
           >
             All Components
-          </button>
+          </motion.button>
           {categories.map((cat) => (
-            <button
+            <motion.button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
                 selectedCategory === cat
-                  ? "bg-accent text-accent-foreground neon-glow-gold"
-                  : "glass border border-primary/20 hover:border-primary/40"
+                  ? "text-white border-glow-gold"
+                  : "glass border-glow-blue hover:border-glow-cyan text-foreground"
               }`}
+              style={selectedCategory === cat ? { 
+                backgroundImage: 'linear-gradient(to right, var(--accent), var(--accent))'
+              } : {}}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
               {cat}
-            </button>
+            </motion.button>
           ))}
         </motion.div>
 
