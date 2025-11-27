@@ -1,363 +1,645 @@
-// components/CircuitBoardFlow.tsx
 "use client"
 
-import React, { JSX, useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactFlow, {
   addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
   Background,
   Controls,
   MiniMap,
-  NodeToolbar,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
   Edge,
   Node,
   Connection,
-  EdgeChange,
-  NodeChange,
   MarkerType,
-  OnNodesChange,
-  OnEdgesChange,
+  Handle,
+  Position,
 } from "reactflow"
 import "reactflow/dist/style.css"
-import { Plus } from "lucide-react"
+import { Plus, Trash2, Power, Zap, RotateCcw } from "lucide-react"
 
-type ComponentType = "battery" | "resistor" | "led" | "switch" | "capacitor"
+type ComponentType = "battery" | "resistor" | "led" | "switch" | "capacitor" | "ground"
 
 interface CircuitData {
   type: ComponentType
-  label?: string
-  active?: boolean
-  value?: string
+  label: string
+  resistance?: number
+  voltage?: number
+  capacitance?: number
+  isClosed?: boolean
+  powered?: boolean
+  current?: number
 }
 
-const createNode = (id: string, x = 0, y = 0, type: ComponentType = "resistor", label?: string): Node => ({
-  id,
-  position: { x, y },
-  data: {
-    type,
-    label: label ?? type.charAt(0).toUpperCase() + type.slice(1),
-    active: type === "battery", // battery is active by default
-  } as CircuitData,
-  draggable: true,
-  connectable: true,
-  selectable: true,
-  type: "default",
-})
+const createNode = (id: string, x: number, y: number, type: ComponentType): Node<CircuitData> => {
+  const defaults: Record<ComponentType, Partial<CircuitData>> = {
+    battery: { voltage: 9, label: "Battery 9V", resistance: 1 },
+    resistor: { resistance: 100, label: "Resistor 100Ω" },
+    led: { resistance: 10, label: "LED" },
+    switch: { isClosed: false, label: "Switch (Open)", resistance: 0.1 },
+    capacitor: { capacitance: 0.0001, label: "Capacitor 100µF", resistance: 50 },
+    ground: { resistance: 0.1, label: "Ground" },
+  }
 
-const nodeColor = (t?: ComponentType, powered?: boolean) => {
-  if (powered) return "#06b6d4" // teal when powered
-  switch (t) {
-    case "battery":
-      return "#ff9800"
-    case "led":
-      return "#ff1744"
-    case "resistor":
-      return "#cbd5e1"
-    case "capacitor":
-      return "#60a5fa"
-    case "switch":
-      return "#f59e0b"
-    default:
-      return "#cbd5e1"
+  return {
+    id,
+    position: { x, y },
+    data: {
+      type,
+      powered: false,
+      current: 0,
+      ...defaults[type],
+    } as CircuitData,
+    type: "custom",
   }
 }
 
-function CircuitNode({ id, data, selected }: { id: string; data: CircuitData; selected?: boolean }) {
-  const powered = !!data.active && data.type !== "switch"
+const getComponentColor = (type: ComponentType, powered: boolean) => {
+  if (powered) {
+    switch (type) {
+      case "led":
+        return "#ff1744"
+      case "battery":
+        return "#ffa726"
+      case "ground":
+        return "#4caf50"
+      default:
+        return "#06b6d4"
+    }
+  }
+  
+  switch (type) {
+    case "battery":
+      return "#ff9800"
+    case "led":
+      return "#880e4f"
+    case "resistor":
+      return "#90a4ae"
+    case "capacitor":
+      return "#1976d2"
+    case "switch":
+      return "#fbc02d"
+    case "ground":
+      return "#2e7d32"
+    default:
+      return "#78909c"
+  }
+}
+
+const getComponentIcon = (type: ComponentType) => {
+  switch (type) {
+    case "battery":
+      return "⚡"
+    case "led":
+      return "💡"
+    case "resistor":
+      return "⊏⊐"
+    case "switch":
+      return "⏻"
+    case "capacitor":
+      return "⊢⊣"
+    case "ground":
+      return "⏚"
+    default:
+      return "●"
+  }
+}
+
+function CircuitNode({ id, data, selected }: { id: string; data: CircuitData; selected: boolean }) {
+  const color = getComponentColor(data.type, data.powered || false)
+  const icon = getComponentIcon(data.type)
+  
   return (
-    <div
-      className="rounded-lg p-3 shadow-md"
-      style={{
-        minWidth: 120,
-        border: selected ? "2px solid rgba(6,182,212,0.9)" : "1px solid rgba(255,255,255,0.06)",
-        background: `linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04))`,
-        color: "white",
-      }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="text-sm font-semibold">{data.label}</div>
-          <div className="text-xs opacity-70">{data.value ?? data.type}</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ background: nodeColor(data.type, powered), boxShadow: powered ? "0 0 10px rgba(6,182,212,0.6)" : "none" }}
-          />
+    <div className="relative">
+      {/* Connection Handles - 4 sides */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        style={{
+          background: '#06b6d4',
+          width: 12,
+          height: 12,
+          border: '2px solid #0e7490',
+          left: -6,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        style={{
+          background: '#06b6d4',
+          width: 12,
+          height: 12,
+          border: '2px solid #0e7490',
+          right: -6,
+        }}
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        style={{
+          background: '#06b6d4',
+          width: 12,
+          height: 12,
+          border: '2px solid #0e7490',
+          top: -6,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        style={{
+          background: '#06b6d4',
+          width: 12,
+          height: 12,
+          border: '2px solid #0e7490',
+          bottom: -6,
+        }}
+      />
+
+      <div
+        className="rounded-lg p-3 shadow-lg transition-all duration-200"
+        style={{
+          minWidth: 140,
+          border: selected ? "2px solid #06b6d4" : "1px solid rgba(255,255,255,0.1)",
+          background: data.powered 
+            ? "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(0,0,0,0.8))"
+            : "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.8))",
+          boxShadow: data.powered ? `0 0 20px ${color}40` : "0 2px 8px rgba(0,0,0,0.3)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1">
+            <div className="text-sm font-bold text-white flex items-center gap-2">
+              <span style={{ fontSize: "1.2em" }}>{icon}</span>
+              {data.label}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              {data.type === "battery" && `${data.voltage}V`}
+              {data.type === "resistor" && `${data.resistance}Ω`}
+              {data.type === "capacitor" && `${(data.capacitance || 0) * 1000000}µF`}
+              {data.type === "switch" && (data.isClosed ? "Closed ✓" : "Open ✗")}
+              {data.type === "ground" && "Return Path"}
+              {data.powered && data.current !== undefined && data.current > 0 && (
+                <div className="text-cyan-400 mt-1">I: {data.current.toFixed(3)}A</div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="w-4 h-4 rounded-full transition-all duration-200"
+              style={{
+                background: color,
+                boxShadow: data.powered ? `0 0 12px ${color}` : "none",
+              }}
+            />
+            {data.type === "led" && data.powered && (
+              <div className="text-xs text-red-400 animate-pulse">ON</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export default function CircuitBoardFlow(): JSX.Element {
-  // initial static nodes/edges (created once)
-  const initialNodes = useMemo<Node[]>(
+export default function CircuitSimulator() {
+  const initialNodes = useMemo<Node<CircuitData>[]>(
     () => [
-      createNode("battery-1", 100, 200, "battery", "Battery"),
-      createNode("switch-1", 300, 200, "switch", "Switch"),
-      createNode("res-1", 500, 200, "resistor", "Resistor"),
-      createNode("led-1", 700, 200, "led", "LED"),
+      createNode("battery-1", 100, 200, "battery"),
+      createNode("switch-1", 320, 200, "switch"),
+      createNode("resistor-1", 540, 200, "resistor"),
+      createNode("led-1", 760, 200, "led"),
+      createNode("ground-1", 430, 350, "ground"),
     ],
     []
   )
 
   const initialEdges = useMemo<Edge[]>(
     () => [
-      { id: "e1", source: "battery-1", target: "switch-1", markerEnd: { type: MarkerType.Arrow } },
-      { id: "e2", source: "switch-1", target: "res-1", markerEnd: { type: MarkerType.Arrow } },
-      { id: "e3", source: "res-1", target: "led-1", markerEnd: { type: MarkerType.Arrow } },
+      { 
+        id: "e1", 
+        source: "battery-1",
+        sourceHandle: "right",
+        target: "switch-1",
+        targetHandle: "left",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        type: "smoothstep",
+        label: "+"
+      },
+      { 
+        id: "e2", 
+        source: "switch-1",
+        sourceHandle: "right",
+        target: "resistor-1",
+        targetHandle: "left",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        type: "smoothstep",
+      },
+      { 
+        id: "e3", 
+        source: "resistor-1",
+        sourceHandle: "right",
+        target: "led-1",
+        targetHandle: "left",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        type: "smoothstep",
+      },
+      { 
+        id: "e4", 
+        source: "led-1",
+        sourceHandle: "bottom",
+        target: "ground-1",
+        targetHandle: "top",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        type: "smoothstep",
+        label: "Return"
+      },
+      { 
+        id: "e5", 
+        source: "ground-1",
+        sourceHandle: "left",
+        target: "battery-1",
+        targetHandle: "bottom",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        type: "smoothstep",
+        label: "-"
+      },
     ],
     []
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([])
+  const [simulationActive, setSimulationActive] = useState(true)
+  
+  const simulationResultsRef = useRef<Map<string, { powered: boolean; current: number }>>(new Map())
+  const lastSimulationHashRef = useRef<string>("")
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [poweredNodes, setPoweredNodes] = useState<Record<string, boolean>>({})
-
-  // Run a lightweight simulation: BFS from batteries, respecting switch active state.
-  const runSimulation = useCallback(() => {
-    // build adjacency
-    const adjacency: Record<string, string[]> = {}
-    edges.forEach((e) => {
-      adjacency[e.source] = adjacency[e.source] || []
-      adjacency[e.source].push(e.target)
-      adjacency[e.target] = adjacency[e.target] || []
-      adjacency[e.target].push(e.source)
+  const calculateCircuitState = useCallback((currentNodes: Node<CircuitData>[], currentEdges: Edge[]) => {
+    const graph: Record<string, string[]> = {}
+    
+    currentEdges.forEach((edge) => {
+      graph[edge.source] = graph[edge.source] || []
+      graph[edge.source].push(edge.target)
+      graph[edge.target] = graph[edge.target] || []
+      graph[edge.target].push(edge.source)
     })
 
-    const batteryIds = nodes.filter((n) => (n.data as CircuitData).type === "battery").map((n) => n.id)
-    const visited: Record<string, boolean> = {}
-    const stack = [...batteryIds]
+    const nodeMap = new Map(currentNodes.map((n) => [n.id, n]))
+    const batteries = currentNodes.filter((n) => n.data.type === "battery")
+    const grounds = new Set(currentNodes.filter((n) => n.data.type === "ground").map(n => n.id))
+    
+    const poweredNodes = new Set<string>()
+    const nodeCurrents = new Map<string, number>()
 
-    while (stack.length) {
-      const cur = stack.pop()!
-      if (visited[cur]) continue
-      visited[cur] = true
+    // Check for complete circuits (battery -> components -> ground -> back to battery)
+    batteries.forEach((battery) => {
+      const voltage = battery.data.voltage || 0
+      
+      // BFS to find paths from battery to ground
+      const visited = new Set<string>()
+      const queue: Array<{ nodeId: string; path: string[] }> = [
+        { nodeId: battery.id, path: [battery.id] },
+      ]
 
-      const neighbors = adjacency[cur] || []
-      neighbors.forEach((nbr) => {
-        const nodeObj = nodes.find((n) => n.id === nbr)
-        if (!nodeObj) return
-        const data = nodeObj.data as CircuitData
-        if (data.type === "switch") {
-          // traverse only when switch is active
-          if (data.active) stack.push(nbr)
-          return
+      while (queue.length > 0) {
+        const { nodeId, path } = queue.shift()!
+        
+        if (visited.has(nodeId)) continue
+        visited.add(nodeId)
+
+        const currentNode = nodeMap.get(nodeId)
+        if (!currentNode) continue
+
+        // If switch is open, stop here
+        if (currentNode.data.type === "switch" && !currentNode.data.isClosed) {
+          continue
         }
-        stack.push(nbr)
-      })
-    }
 
-    // compute new powered map
-    const newPowered: Record<string, boolean> = {}
-    nodes.forEach((n) => (newPowered[n.id] = !!visited[n.id]))
+        // Check if we reached ground and can return to battery
+        if (grounds.has(nodeId)) {
+          // Check if there's a path back to the battery
+          const pathBackQueue: string[] = [nodeId]
+          const visitedBack = new Set<string>([nodeId])
+          let foundReturnPath = false
 
-    setPoweredNodes(newPowered)
+          while (pathBackQueue.length > 0) {
+            const current = pathBackQueue.shift()!
+            if (current === battery.id) {
+              foundReturnPath = true
+              break
+            }
 
-    // update nodes' data.active for those node types that should reflect powered state (e.g., LED)
-    // Only call setNodes if something actually changes (prevents re-render loop)
-    let changed = false
-    const updated = nodes.map((n) => {
-      const prevActive = !!(n.data as CircuitData).active
-      // We'll set active for anything except switches/battery (battery keeps its own active)
-      let nextActive = prevActive
-      const data = n.data as CircuitData
-      if (data.type === "battery") {
-        nextActive = true // battery always true
-      } else if (data.type === "switch") {
-        nextActive = !!data.active // keep switch own state (toggled manually)
-      } else {
-        nextActive = !!newPowered[n.id]
+            const neighbors = graph[current] || []
+            neighbors.forEach((neighbor) => {
+              if (!visitedBack.has(neighbor)) {
+                visitedBack.add(neighbor)
+                pathBackQueue.push(neighbor)
+              }
+            })
+          }
+
+          // If complete circuit exists, mark all nodes in path as powered
+          if (foundReturnPath) {
+            path.forEach(id => poweredNodes.add(id))
+            poweredNodes.add(nodeId) // Add ground too
+
+            // Calculate current
+            let totalResistance = 0
+            path.forEach((id) => {
+              const node = nodeMap.get(id)
+              if (node) {
+                totalResistance += node.data.resistance || 0
+              }
+            })
+
+            const current = totalResistance > 0 ? voltage / totalResistance : 0
+            path.forEach(id => {
+              nodeCurrents.set(id, Math.max(nodeCurrents.get(id) || 0, current))
+            })
+          }
+        }
+
+        // Continue traversing
+        const neighbors = graph[nodeId] || []
+        neighbors.forEach((neighborId) => {
+          if (!visited.has(neighborId)) {
+            queue.push({ nodeId: neighborId, path: [...path, neighborId] })
+          }
+        })
       }
-
-      if (nextActive !== prevActive) {
-        changed = true
-        return { ...n, data: { ...(n.data as CircuitData), active: nextActive } }
-      }
-      return n
     })
 
-    if (changed) {
-      // applyNodeChanges would be fine, but setNodes replacement is clearer
-      setNodes(updated)
-    }
-  }, [nodes, edges, setNodes])
+    const results = new Map<string, { powered: boolean; current: number }>()
+    currentNodes.forEach((n) => {
+      results.set(n.id, {
+        powered: poweredNodes.has(n.id),
+        current: nodeCurrents.get(n.id) || 0,
+      })
+    })
 
-  // Run simulation after nodes/edges change
+    return results
+  }, [])
+
   useEffect(() => {
-    runSimulation()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, /* nodes intentionally not in deps to avoid double-run when setNodes inside runSimulation updates nodes */])
+    if (!simulationActive) return
 
-  // Toggle switch/battery active state (battery toggling is allowed here)
-  const toggleNodeActive = useCallback(
-    (id: string) => {
-      setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...(n.data as CircuitData), active: !(n.data as CircuitData).active } } : n)))
+    const switchStates = nodes
+      .filter(n => n.data.type === "switch")
+      .map(n => `${n.id}:${n.data.isClosed}`)
+      .join("|")
+    const circuitHash = `${nodes.length}-${edges.length}-${switchStates}`
+
+    if (circuitHash === lastSimulationHashRef.current) {
+      return
+    }
+
+    lastSimulationHashRef.current = circuitHash
+    const results = calculateCircuitState(nodes, edges)
+    simulationResultsRef.current = results
+
+    setNodes((currentNodes) => {
+      return currentNodes.map((n) => {
+        const result = results.get(n.id)
+        if (!result) return n
+
+        if (n.data.powered !== result.powered || 
+            Math.abs((n.data.current || 0) - result.current) > 0.001) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              powered: result.powered,
+              current: result.current,
+            },
+          }
+        }
+        return n
+      })
+    })
+  }, [nodes.length, edges.length, nodes.filter(n => n.data.type === "switch").map(n => `${n.id}-${n.data.isClosed}`).join(","), simulationActive, calculateCircuitState, setNodes])
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            type: "smoothstep",
+          },
+          eds
+        )
+      )
     },
-    [setNodes]
+    [setEdges]
   )
 
-  const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge({ ...params, markerEnd: { type: MarkerType.Arrow } }, eds)), [setEdges])
-
-  // add node helper
   const addComponent = useCallback(
     (type: ComponentType) => {
       const id = `${type}-${Date.now()}`
-      const posX = 200 + Math.random() * 400
-      const posY = 100 + Math.random() * 300
-      const node = createNode(id, posX, posY, type, type.charAt(0).toUpperCase() + type.slice(1))
-      setNodes((nds) => nds.concat(node))
+      const node = createNode(id, 200 + Math.random() * 500, 150 + Math.random() * 300, type)
+      setNodes((nds) => [...nds, node])
     },
     [setNodes]
   )
 
-  // track selection correctly with the dedicated callback
-  const onSelectionChange = useCallback(
-    ({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) => {
-      setSelectedNodeId(selNodes && selNodes.length ? (selNodes[0].id as string) : null)
+  const toggleSwitch = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === nodeId && n.data.type === "switch") {
+            const isClosed = !n.data.isClosed
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                isClosed,
+                label: `Switch (${isClosed ? "Closed" : "Open"})`,
+              },
+            }
+          }
+          return n
+        })
+      )
     },
-    []
+    [setNodes]
   )
 
-  // track node/edge changes (use provided helpers)
-  const wrappedOnNodesChange: OnNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes)
-    },
-    [onNodesChange]
-  )
-  const wrappedOnEdgesChange: OnEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      onEdgesChange(changes)
-    },
-    [onEdgesChange]
-  )
+  const deleteSelected = useCallback(() => {
+    setNodes((nds) => nds.filter((n) => !selectedNodes.includes(n.id)))
+    setEdges((eds) =>
+      eds.filter((e) => !selectedNodes.includes(e.source) && !selectedNodes.includes(e.target))
+    )
+    setSelectedNodes([])
+  }, [selectedNodes, setNodes, setEdges])
 
-  // styled edges reflect power
-  const styledEdges = edges.map((e) => ({
-    ...e,
-    style: { stroke: poweredNodes[e.source] && poweredNodes[e.target] ? "#06b6d4" : "rgba(255,255,255,0.12)", strokeWidth: 3 },
-  }))
+  const styledEdges = useMemo(() => {
+    return edges.map((e) => {
+      const sourceNode = nodes.find((n) => n.id === e.source)
+      const targetNode = nodes.find((n) => n.id === e.target)
+      const powered = sourceNode?.data.powered && targetNode?.data.powered
+      
+      return {
+        ...e,
+        animated: powered,
+        style: {
+          stroke: powered ? "#06b6d4" : "rgba(255,255,255,0.2)",
+          strokeWidth: powered ? 3 : 2,
+        },
+        labelStyle: {
+          fill: powered ? "#06b6d4" : "#94a3b8",
+          fontSize: 12,
+          fontWeight: 600,
+        },
+        labelBgStyle: {
+          fill: "rgba(0,0,0,0.7)",
+          fillOpacity: 0.8,
+        },
+      }
+    })
+  }, [edges, nodes])
 
   return (
-    <div className="w-full h-[720px] bg-slate-900/80 rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-bold text-white">Digital Circuit Board — Interactive</h3>
-          <div className="text-xs text-slate-300 opacity-70">(Drag nodes, connect with edges, toggle switches)</div>
+    <div className="w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="h-full flex flex-col p-4">
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 mb-4 border border-slate-700">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Zap className="w-6 h-6 text-cyan-400" />
+                Electronic Circuit Simulator
+              </h1>
+              <p className="text-sm text-gray-400 mt-1">
+                Drag handles to connect • Click switches to toggle • Complete circuit: Battery → Components → Ground → Battery
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSimulationActive(!simulationActive)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                  simulationActive
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-gray-600 hover:bg-gray-700 text-white"
+                }`}
+              >
+                <Power className="w-4 h-4" />
+                {simulationActive ? "Simulation ON" : "Simulation OFF"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <span className="text-sm text-gray-400 mr-2">Add Components:</span>
+            <button
+              onClick={() => addComponent("battery")}
+              className="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Battery
+            </button>
+            <button
+              onClick={() => addComponent("switch")}
+              className="px-3 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Switch
+            </button>
+            <button
+              onClick={() => addComponent("resistor")}
+              className="px-3 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Resistor
+            </button>
+            <button
+              onClick={() => addComponent("led")}
+              className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> LED
+            </button>
+            <button
+              onClick={() => addComponent("capacitor")}
+              className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Capacitor
+            </button>
+            <button
+              onClick={() => addComponent("ground")}
+              className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Ground
+            </button>
+
+            <div className="h-8 w-px bg-gray-600 mx-2" />
+
+            <button
+              onClick={() => {
+                setNodes(initialNodes)
+                setEdges(initialEdges)
+                setSelectedNodes([])
+                lastSimulationHashRef.current = ""
+              }}
+              className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-all flex items-center gap-1"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset
+            </button>
+
+            {selectedNodes.length > 0 && (
+              <button
+                onClick={deleteSelected}
+                className="px-3 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-sm font-medium transition-all flex items-center gap-1"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => addComponent("battery")} className="inline-flex items-center gap-2 px-3 py-1 rounded bg-amber-600 text-white text-sm">
-            <Plus className="w-4 h-4" /> Add
-          </button>
-          <div className="h-8 w-px bg-white/10 mx-2" />
-          <button type="button" onClick={() => addComponent("resistor")} className="px-3 py-1 rounded bg-slate-700 text-white text-sm">
-            Resistor
-          </button>
-          <button type="button" onClick={() => addComponent("led")} className="px-3 py-1 rounded bg-pink-600 text-white text-sm">
-            LED
-          </button>
-          <button type="button" onClick={() => addComponent("switch")} className="px-3 py-1 rounded bg-yellow-500 text-black text-sm">
-            Switch
-          </button>
-          <button type="button" onClick={() => addComponent("capacitor")} className="px-3 py-1 rounded bg-sky-500 text-white text-sm">
-            Capacitor
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setNodes(initialNodes)
-              setEdges(initialEdges)
-              setSelectedNodeId(null)
-            }}
-            className="ml-3 px-3 py-1 rounded bg-red-600 text-white text-sm"
-          >
-            Reset
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(JSON.stringify({ nodes, edges }))
-            }}
-            className="ml-2 px-3 py-1 rounded bg-slate-600 text-white text-sm"
-          >
-            Copy JSON
-          </button>
+        <div className="flex-1 rounded-xl overflow-hidden border border-slate-700 bg-slate-900/50">
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={nodes}
+              edges={styledEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={(_, node) => {
+                if (node.data.type === "switch") {
+                  toggleSwitch(node.id)
+                }
+              }}
+              onSelectionChange={({ nodes: selNodes }) => {
+                setSelectedNodes(selNodes.map((n) => n.id))
+              }}
+              nodeTypes={{
+                custom: (props: any) => (
+                  <CircuitNode
+                    id={props.id}
+                    data={props.data}
+                    selected={props.selected}
+                  />
+                ),
+              }}
+              fitView
+              attributionPosition="bottom-right"
+            >
+              <Background gap={20} size={1} color="rgba(255,255,255,0.05)" />
+              <Controls className="bg-slate-800 border-slate-700" />
+              <MiniMap
+                nodeColor={(n) => getComponentColor(n.data.type, n.data.powered || false)}
+                className="bg-slate-800 border-slate-700"
+                maskColor="rgba(0,0,0,0.6)"
+              />
+            </ReactFlow>
+          </ReactFlowProvider>
         </div>
       </div>
-
-      <ReactFlowProvider>
-        <div className="h-[620px] rounded-lg overflow-hidden">
-          <ReactFlow
-            nodes={nodes.map((n) => ({ ...n, data: { ...(n.data as CircuitData), label: (n.data as CircuitData).label } }))}
-            edges={styledEdges}
-            onNodesChange={wrappedOnNodesChange}
-            onEdgesChange={wrappedOnEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={(e, node) => {
-              // quick toggle if switch clicked
-              if ((node.data as CircuitData).type === "switch") {
-                toggleNodeActive(node.id)
-                // run simulation after toggling switch
-                setTimeout(() => runSimulation(), 10)
-              }
-            }}
-            onNodeDoubleClick={(e, node) => setSelectedNodeId(node.id)}
-            onSelectionChange={onSelectionChange}
-            fitView
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-            panOnScroll
-            zoomOnScroll
-            attributionPosition="bottom-left"
-            nodeTypes={{ default: (props: any) => <CircuitNode id={props.id} data={props.data} selected={props.selected} /> }}
-          >
-            <Background gap={16} color="rgba(255,255,255,0.04)" />
-            <Controls />
-            <MiniMap nodeStrokeColor={() => "transparent"} nodeColor={(n) => nodeColor((n.data as CircuitData).type, poweredNodes[n.id])} />
-
-            {selectedNodeId && (
-              <NodeToolbar >
-                <div className="bg-slate-800/90 rounded px-2 py-1 flex items-center gap-2 text-xs text-white">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toggleNodeActive(selectedNodeId)
-                      setTimeout(() => runSimulation(), 10)
-                    }}
-                    className="px-2 py-1 rounded bg-slate-700"
-                  >
-                    Toggle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNodes((nds) => nds.filter((n) => n.id !== selectedNodeId))
-                      setEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId))
-                      setSelectedNodeId(null)
-                      setTimeout(() => runSimulation(), 10)
-                    }}
-                    className="px-2 py-1 rounded bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </NodeToolbar>
-            )}
-          </ReactFlow>
-        </div>
-      </ReactFlowProvider>
     </div>
   )
 }
-
-
