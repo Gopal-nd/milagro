@@ -1,5 +1,5 @@
 "use client"
-
+import { marked } from "marked";
 import { useRef, useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -68,7 +68,7 @@ export default function ChatPage() {
                       : "border text-foreground"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
                 </div>
               </motion.div>
             ))}
