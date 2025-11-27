@@ -1,310 +1,363 @@
+// components/CircuitBoardFlow.tsx
 "use client"
 
-import type React from "react"
+import React, { JSX, useCallback, useEffect, useMemo, useState } from "react"
+import ReactFlow, {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  Background,
+  Controls,
+  MiniMap,
+  NodeToolbar,
+  ReactFlowProvider,
+  useEdgesState,
+  useNodesState,
+  Edge,
+  Node,
+  Connection,
+  EdgeChange,
+  NodeChange,
+  MarkerType,
+  OnNodesChange,
+  OnEdgesChange,
+} from "reactflow"
+import "reactflow/dist/style.css"
+import { Plus } from "lucide-react"
 
-import { useState, useRef, useEffect } from "react"
-import { motion } from "framer-motion"
+type ComponentType = "battery" | "resistor" | "led" | "switch" | "capacitor"
 
-interface CircuitComponent {
-  id: string
-  name: string
-  x: number
-  y: number
-  active: boolean
-  type: "resistor" | "led" | "capacitor" | "switch" | "battery"
+interface CircuitData {
+  type: ComponentType
+  label?: string
+  active?: boolean
+  value?: string
 }
 
-export function CircuitSimulator3D() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [components, setComponents] = useState<CircuitComponent[]>([
-    { id: "1", name: "Battery", x: 100, y: 150, active: true, type: "battery" },
-    { id: "2", name: "Switch", x: 220, y: 150, active: false, type: "switch" },
-    { id: "3", name: "Resistor", x: 340, y: 150, active: false, type: "resistor" },
-    { id: "4", name: "LED", x: 460, y: 150, active: false, type: "led" },
-    { id: "5", name: "Capacitor", x: 280, y: 280, active: false, type: "capacitor" },
-  ])
-  const [rotation, setRotation] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
+const createNode = (id: string, x = 0, y = 0, type: ComponentType = "resistor", label?: string): Node => ({
+  id,
+  position: { x, y },
+  data: {
+    type,
+    label: label ?? type.charAt(0).toUpperCase() + type.slice(1),
+    active: type === "battery", // battery is active by default
+  } as CircuitData,
+  draggable: true,
+  connectable: true,
+  selectable: true,
+  type: "default",
+})
 
-  // Draw 3D circuit with enhanced visuals
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    // Clear canvas with gradient
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-    gradient.addColorStop(0, "rgba(11, 18, 32, 0.95)")
-    gradient.addColorStop(1, "rgba(5, 10, 20, 0.95)")
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    // Draw animated grid
-    ctx.strokeStyle = "rgba(0, 188, 212, 0.08)"
-    ctx.lineWidth = 1
-    for (let i = 0; i < canvas.width; i += 40) {
-      ctx.beginPath()
-      ctx.moveTo(i, 0)
-      ctx.lineTo(i, canvas.height)
-      ctx.stroke()
-    }
-    for (let i = 0; i < canvas.height; i += 40) {
-      ctx.beginPath()
-      ctx.moveTo(0, i)
-      ctx.lineTo(canvas.width, i)
-      ctx.stroke()
-    }
-
-    // Draw animated circuit connections
-    ctx.strokeStyle = "rgba(0, 188, 212, 0.5)"
-    ctx.lineWidth = 3
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-    for (let i = 0; i < components.length - 1; i++) {
-      const current = components[i]
-      const next = components[i + 1]
-      ctx.beginPath()
-      ctx.moveTo(current.x, current.y)
-      ctx.lineTo(next.x, next.y)
-      ctx.stroke()
-    }
-
-    // Draw components with enhanced visuals
-    components.forEach((comp, idx) => {
-      const x = comp.x + Math.sin(rotation.y + Date.now() / 1000) * 5
-      const y = comp.y + Math.cos(rotation.x + Date.now() / 1000) * 5
-      const isSelected = comp.id === selectedComponent
-
-      // Enhanced shadow
-      ctx.shadowColor = comp.active ? "rgba(0, 188, 212, 0.8)" : "rgba(255, 202, 40, 0.3)"
-      ctx.shadowBlur = comp.active ? 25 : 8
-      ctx.shadowOffsetX = 3
-      ctx.shadowOffsetY = 3
-
-      // Draw component based on type
-      switch (comp.type) {
-        case "battery":
-          // Draw battery with gradient
-          const batteryGradient = ctx.createLinearGradient(x - 15, y - 25, x - 15, y + 25)
-          batteryGradient.addColorStop(0, "#ffca28")
-          batteryGradient.addColorStop(0.5, "#ffa726")
-          batteryGradient.addColorStop(1, "#ff9800")
-          ctx.fillStyle = batteryGradient
-          ctx.fillRect(x - 15, y - 25, 30, 50)
-          ctx.strokeStyle = "#ff6f00"
-          ctx.lineWidth = 2
-          ctx.strokeRect(x - 15, y - 25, 30, 50)
-          // Positive terminal
-          ctx.fillStyle = "#fff"
-          ctx.fillRect(x - 8, y - 35, 16, 8)
-          break
-
-        case "led":
-          // Draw LED with glow
-          ctx.fillStyle = comp.active ? "#ff1744" : "#991111"
-          ctx.beginPath()
-          ctx.moveTo(x - 12, y - 18)
-          ctx.lineTo(x + 12, y - 18)
-          ctx.lineTo(x, y + 18)
-          ctx.closePath()
-          ctx.fill()
-
-          if (comp.active) {
-            ctx.shadowColor = "#ff1744"
-            ctx.shadowBlur = 30
-            ctx.fillStyle = "rgba(255, 23, 68, 0.4)"
-            ctx.beginPath()
-            ctx.moveTo(x - 20, y - 25)
-            ctx.lineTo(x + 20, y - 25)
-            ctx.lineTo(x, y + 25)
-            ctx.closePath()
-            ctx.fill()
-          }
-          break
-
-        case "resistor":
-          // Draw resistor with texture
-          ctx.strokeStyle = comp.active ? "#00bcd4" : "#888"
-          ctx.lineWidth = 4
-          ctx.beginPath()
-          ctx.moveTo(x - 25, y)
-          for (let i = 0; i < 5; i++) {
-            ctx.lineTo(x - 25 + (i + 1) * 10, y + (i % 2 === 0 ? -10 : 10))
-          }
-          ctx.lineTo(x + 25, y)
-          ctx.stroke()
-          break
-
-        case "capacitor":
-          // Draw capacitor with better design
-          ctx.strokeStyle = comp.active ? "#00bcd4" : "#888"
-          ctx.lineWidth = 3
-          ctx.beginPath()
-          ctx.moveTo(x - 25, y)
-          ctx.lineTo(x - 8, y)
-          ctx.stroke()
-
-          ctx.lineWidth = 4
-          ctx.beginPath()
-          ctx.moveTo(x - 5, y - 18)
-          ctx.lineTo(x - 5, y + 18)
-          ctx.stroke()
-          ctx.beginPath()
-          ctx.moveTo(x + 5, y - 18)
-          ctx.lineTo(x + 5, y + 18)
-          ctx.stroke()
-
-          ctx.lineWidth = 3
-          ctx.beginPath()
-          ctx.moveTo(x + 8, y)
-          ctx.lineTo(x + 25, y)
-          ctx.stroke()
-          break
-
-        case "switch":
-          // Draw switch with indicator
-          ctx.strokeStyle = comp.active ? "#4caf50" : "#dd7e00"
-          ctx.fillStyle = comp.active ? "rgba(76, 175, 80, 0.3)" : "rgba(221, 126, 0, 0.2)"
-          ctx.lineWidth = 3
-          ctx.beginPath()
-          ctx.arc(x, y, 12, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.stroke()
-
-          ctx.fillStyle = comp.active ? "#4caf50" : "#dd7e00"
-          ctx.beginPath()
-          ctx.arc(x, y, 6, 0, Math.PI * 2)
-          ctx.fill()
-          break
-      }
-
-      ctx.shadowColor = "transparent"
-
-      // Label with enhanced styling
-      ctx.fillStyle = isSelected ? "#00bcd4" : "#fff"
-      ctx.font = "bold 13px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText(comp.name, x, y + 50)
-
-      if (isSelected) {
-        ctx.strokeStyle = "#00bcd4"
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.arc(x, y, 35, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-    })
-  }, [components, rotation, selectedComponent])
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (dragging) {
-      const deltaX = e.clientX - dragStart.x
-      const deltaY = e.clientY - dragStart.y
-      setRotation({
-        x: rotation.x + deltaY * 0.01,
-        y: rotation.y + deltaX * 0.01,
-      })
-    }
+const nodeColor = (t?: ComponentType, powered?: boolean) => {
+  if (powered) return "#06b6d4" // teal when powered
+  switch (t) {
+    case "battery":
+      return "#ff9800"
+    case "led":
+      return "#ff1744"
+    case "resistor":
+      return "#cbd5e1"
+    case "capacitor":
+      return "#60a5fa"
+    case "switch":
+      return "#f59e0b"
+    default:
+      return "#cbd5e1"
   }
+}
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setDragging(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
-  }
-
-  const handleMouseUp = () => {
-    setDragging(false)
-  }
-
-  const toggleComponent = (id: string) => {
-    setComponents((prev) => prev.map((comp) => (comp.id === id ? { ...comp, active: !comp.active } : comp)))
-    setSelectedComponent(id)
-  }
-
+function CircuitNode({ id, data, selected }: { id: string; data: CircuitData; selected?: boolean }) {
+  const powered = !!data.active && data.type !== "switch"
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      <motion.div
-        className="glass rounded-2xl p-8 space-y-6 border border-neon-blue/20"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-neon-blue to-neon-cyan bg-clip-text text-transparent">
-              Interactive 3D Circuit Simulator
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Drag to rotate • Click components to toggle • Explore real-time circuit behavior
-            </p>
-          </div>
+    <div
+      className="rounded-lg p-3 shadow-md"
+      style={{
+        minWidth: 120,
+        border: selected ? "2px solid rgba(6,182,212,0.9)" : "1px solid rgba(255,255,255,0.06)",
+        background: `linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04))`,
+        color: "white",
+      }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold">{data.label}</div>
+          <div className="text-xs opacity-70">{data.value ?? data.type}</div>
         </div>
-
-        {/* Canvas */}
-        <motion.canvas
-          ref={canvasRef}
-          width={700}
-          height={480}
-          onMouseMove={handleMouseMove}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          className="w-full border-2 border-neon-cyan/30 rounded-xl cursor-grab active:cursor-grabbing bg-dark-bg"
-          whileHover={{ borderColor: "rgba(0, 188, 212, 0.6)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        />
-
-        {/* Controls */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {components.map((comp) => (
-            <motion.button
-              key={comp.id}
-              onClick={() => toggleComponent(comp.id)}
-              className={`p-4 rounded-lg transition-all font-semibold ${
-                comp.active
-                  ? "bg-gradient-to-br from-neon-blue/30 to-neon-cyan/20 border-2 border-neon-blue text-neon-blue shadow-lg"
-                  : "bg-muted/30 border-2 border-border text-muted-foreground hover:border-neon-blue/50"
-              }`}
-              whileHover={{ scale: 1.08, y: -2 }}
-              whileTap={{ scale: 0.93 }}
-            >
-              <div className="text-sm font-bold">{comp.name}</div>
-              <motion.div className="text-xs opacity-75 mt-1" animate={{ opacity: comp.active ? 1 : 0.5 }}>
-                {comp.active ? "ON" : "OFF"}
-              </motion.div>
-            </motion.button>
-          ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ background: nodeColor(data.type, powered), boxShadow: powered ? "0 0 10px rgba(6,182,212,0.6)" : "none" }}
+          />
         </div>
-
-        {/* Info */}
-        {selectedComponent && (
-          <motion.div
-            className="p-5 bg-gradient-to-r from-neon-blue/10 to-neon-cyan/10 border-2 border-neon-blue/40 rounded-xl"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <p className="text-sm text-foreground font-medium">
-              <span className="text-neon-blue">{components.find((c) => c.id === selectedComponent)?.name}</span>
-              {" is currently "}
-              <span
-                className={
-                  components.find((c) => c.id === selectedComponent)?.active ? "text-green-400" : "text-yellow-400"
-                }
-              >
-                {components.find((c) => c.id === selectedComponent)?.active ? "ON" : "OFF"}
-              </span>
-            </p>
-          </motion.div>
-        )}
-      </motion.div>
+      </div>
     </div>
   )
 }
+
+export default function CircuitBoardFlow(): JSX.Element {
+  // initial static nodes/edges (created once)
+  const initialNodes = useMemo<Node[]>(
+    () => [
+      createNode("battery-1", 100, 200, "battery", "Battery"),
+      createNode("switch-1", 300, 200, "switch", "Switch"),
+      createNode("res-1", 500, 200, "resistor", "Resistor"),
+      createNode("led-1", 700, 200, "led", "LED"),
+    ],
+    []
+  )
+
+  const initialEdges = useMemo<Edge[]>(
+    () => [
+      { id: "e1", source: "battery-1", target: "switch-1", markerEnd: { type: MarkerType.Arrow } },
+      { id: "e2", source: "switch-1", target: "res-1", markerEnd: { type: MarkerType.Arrow } },
+      { id: "e3", source: "res-1", target: "led-1", markerEnd: { type: MarkerType.Arrow } },
+    ],
+    []
+  )
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [poweredNodes, setPoweredNodes] = useState<Record<string, boolean>>({})
+
+  // Run a lightweight simulation: BFS from batteries, respecting switch active state.
+  const runSimulation = useCallback(() => {
+    // build adjacency
+    const adjacency: Record<string, string[]> = {}
+    edges.forEach((e) => {
+      adjacency[e.source] = adjacency[e.source] || []
+      adjacency[e.source].push(e.target)
+      adjacency[e.target] = adjacency[e.target] || []
+      adjacency[e.target].push(e.source)
+    })
+
+    const batteryIds = nodes.filter((n) => (n.data as CircuitData).type === "battery").map((n) => n.id)
+    const visited: Record<string, boolean> = {}
+    const stack = [...batteryIds]
+
+    while (stack.length) {
+      const cur = stack.pop()!
+      if (visited[cur]) continue
+      visited[cur] = true
+
+      const neighbors = adjacency[cur] || []
+      neighbors.forEach((nbr) => {
+        const nodeObj = nodes.find((n) => n.id === nbr)
+        if (!nodeObj) return
+        const data = nodeObj.data as CircuitData
+        if (data.type === "switch") {
+          // traverse only when switch is active
+          if (data.active) stack.push(nbr)
+          return
+        }
+        stack.push(nbr)
+      })
+    }
+
+    // compute new powered map
+    const newPowered: Record<string, boolean> = {}
+    nodes.forEach((n) => (newPowered[n.id] = !!visited[n.id]))
+
+    setPoweredNodes(newPowered)
+
+    // update nodes' data.active for those node types that should reflect powered state (e.g., LED)
+    // Only call setNodes if something actually changes (prevents re-render loop)
+    let changed = false
+    const updated = nodes.map((n) => {
+      const prevActive = !!(n.data as CircuitData).active
+      // We'll set active for anything except switches/battery (battery keeps its own active)
+      let nextActive = prevActive
+      const data = n.data as CircuitData
+      if (data.type === "battery") {
+        nextActive = true // battery always true
+      } else if (data.type === "switch") {
+        nextActive = !!data.active // keep switch own state (toggled manually)
+      } else {
+        nextActive = !!newPowered[n.id]
+      }
+
+      if (nextActive !== prevActive) {
+        changed = true
+        return { ...n, data: { ...(n.data as CircuitData), active: nextActive } }
+      }
+      return n
+    })
+
+    if (changed) {
+      // applyNodeChanges would be fine, but setNodes replacement is clearer
+      setNodes(updated)
+    }
+  }, [nodes, edges, setNodes])
+
+  // Run simulation after nodes/edges change
+  useEffect(() => {
+    runSimulation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edges, /* nodes intentionally not in deps to avoid double-run when setNodes inside runSimulation updates nodes */])
+
+  // Toggle switch/battery active state (battery toggling is allowed here)
+  const toggleNodeActive = useCallback(
+    (id: string) => {
+      setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...(n.data as CircuitData), active: !(n.data as CircuitData).active } } : n)))
+    },
+    [setNodes]
+  )
+
+  const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge({ ...params, markerEnd: { type: MarkerType.Arrow } }, eds)), [setEdges])
+
+  // add node helper
+  const addComponent = useCallback(
+    (type: ComponentType) => {
+      const id = `${type}-${Date.now()}`
+      const posX = 200 + Math.random() * 400
+      const posY = 100 + Math.random() * 300
+      const node = createNode(id, posX, posY, type, type.charAt(0).toUpperCase() + type.slice(1))
+      setNodes((nds) => nds.concat(node))
+    },
+    [setNodes]
+  )
+
+  // track selection correctly with the dedicated callback
+  const onSelectionChange = useCallback(
+    ({ nodes: selNodes }: { nodes: Node[]; edges: Edge[] }) => {
+      setSelectedNodeId(selNodes && selNodes.length ? (selNodes[0].id as string) : null)
+    },
+    []
+  )
+
+  // track node/edge changes (use provided helpers)
+  const wrappedOnNodesChange: OnNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChange(changes)
+    },
+    [onNodesChange]
+  )
+  const wrappedOnEdgesChange: OnEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      onEdgesChange(changes)
+    },
+    [onEdgesChange]
+  )
+
+  // styled edges reflect power
+  const styledEdges = edges.map((e) => ({
+    ...e,
+    style: { stroke: poweredNodes[e.source] && poweredNodes[e.target] ? "#06b6d4" : "rgba(255,255,255,0.12)", strokeWidth: 3 },
+  }))
+
+  return (
+    <div className="w-full h-[720px] bg-slate-900/80 rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-bold text-white">Digital Circuit Board — Interactive</h3>
+          <div className="text-xs text-slate-300 opacity-70">(Drag nodes, connect with edges, toggle switches)</div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => addComponent("battery")} className="inline-flex items-center gap-2 px-3 py-1 rounded bg-amber-600 text-white text-sm">
+            <Plus className="w-4 h-4" /> Add
+          </button>
+          <div className="h-8 w-px bg-white/10 mx-2" />
+          <button type="button" onClick={() => addComponent("resistor")} className="px-3 py-1 rounded bg-slate-700 text-white text-sm">
+            Resistor
+          </button>
+          <button type="button" onClick={() => addComponent("led")} className="px-3 py-1 rounded bg-pink-600 text-white text-sm">
+            LED
+          </button>
+          <button type="button" onClick={() => addComponent("switch")} className="px-3 py-1 rounded bg-yellow-500 text-black text-sm">
+            Switch
+          </button>
+          <button type="button" onClick={() => addComponent("capacitor")} className="px-3 py-1 rounded bg-sky-500 text-white text-sm">
+            Capacitor
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setNodes(initialNodes)
+              setEdges(initialEdges)
+              setSelectedNodeId(null)
+            }}
+            className="ml-3 px-3 py-1 rounded bg-red-600 text-white text-sm"
+          >
+            Reset
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(JSON.stringify({ nodes, edges }))
+            }}
+            className="ml-2 px-3 py-1 rounded bg-slate-600 text-white text-sm"
+          >
+            Copy JSON
+          </button>
+        </div>
+      </div>
+
+      <ReactFlowProvider>
+        <div className="h-[620px] rounded-lg overflow-hidden">
+          <ReactFlow
+            nodes={nodes.map((n) => ({ ...n, data: { ...(n.data as CircuitData), label: (n.data as CircuitData).label } }))}
+            edges={styledEdges}
+            onNodesChange={wrappedOnNodesChange}
+            onEdgesChange={wrappedOnEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={(e, node) => {
+              // quick toggle if switch clicked
+              if ((node.data as CircuitData).type === "switch") {
+                toggleNodeActive(node.id)
+                // run simulation after toggling switch
+                setTimeout(() => runSimulation(), 10)
+              }
+            }}
+            onNodeDoubleClick={(e, node) => setSelectedNodeId(node.id)}
+            onSelectionChange={onSelectionChange}
+            fitView
+            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+            panOnScroll
+            zoomOnScroll
+            attributionPosition="bottom-left"
+            nodeTypes={{ default: (props: any) => <CircuitNode id={props.id} data={props.data} selected={props.selected} /> }}
+          >
+            <Background gap={16} color="rgba(255,255,255,0.04)" />
+            <Controls />
+            <MiniMap nodeStrokeColor={() => "transparent"} nodeColor={(n) => nodeColor((n.data as CircuitData).type, poweredNodes[n.id])} />
+
+            {selectedNodeId && (
+              <NodeToolbar >
+                <div className="bg-slate-800/90 rounded px-2 py-1 flex items-center gap-2 text-xs text-white">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleNodeActive(selectedNodeId)
+                      setTimeout(() => runSimulation(), 10)
+                    }}
+                    className="px-2 py-1 rounded bg-slate-700"
+                  >
+                    Toggle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNodes((nds) => nds.filter((n) => n.id !== selectedNodeId))
+                      setEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId))
+                      setSelectedNodeId(null)
+                      setTimeout(() => runSimulation(), 10)
+                    }}
+                    className="px-2 py-1 rounded bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </NodeToolbar>
+            )}
+          </ReactFlow>
+        </div>
+      </ReactFlowProvider>
+    </div>
+  )
+}
+
+

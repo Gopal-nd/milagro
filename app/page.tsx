@@ -4,7 +4,7 @@ import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { FeaturedSection } from "@/components/featured-section"
 import { Footer } from "@/components/footer"
-import { CircuitSimulator3D } from "@/components/3d-circuit-simulator"
+import CircuitSimulator3D from "@/components/3d-circuit-simulator"
 import { motion } from "framer-motion"
 
 export default function Home() {
