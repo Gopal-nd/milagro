@@ -91,7 +91,7 @@ export function Hero() {
         {/* Main heading with animated gradient */}
         <motion.div variants={itemVariants as any} className="mb-8">
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-tight">
-            <span className="block text-white mb-2">Master</span>
+            <span className="block  mb-2">Master</span>
             <motion.span
               className="block bg-clip-text text-transparent py-2"
               style={{ 
