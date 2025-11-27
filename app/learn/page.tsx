@@ -32,7 +32,7 @@ export default function LearnPage() {
     <main className="min-h-screen bg-background">
       <Header />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mt-10 mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-12">
           <motion.h1

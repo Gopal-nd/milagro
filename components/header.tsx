@@ -81,13 +81,12 @@ export function Header() {
         {/* center: links (desktop) */}
         <div className="hidden md:flex items-center gap-6">
           {navLinks.map((l) => (
-            <Link
+            <a href = {l.href}
               key={l.href}
-              href={l.href}
               className={`text-sm font-medium px-2 py-1 rounded-md transition-colors hover:text-primary ${isActive(l.href) ? "text-primary underline underline-offset-4" : "text-foreground/70"}`}
             >
               {l.label}
-            </Link>
+            </a>
           ))}
         </div>
 

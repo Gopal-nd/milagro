@@ -131,7 +131,7 @@ export function Hero() {
 
         {/* CTA Buttons with enhanced hover effects */}
         <motion.div variants={itemVariants as any} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-          <Link href="/learn">
+          <a href="/learn">
             <motion.button
               className="px-8 py-4 border text-white hover:shadow-2xl rounded-lg font-bold transition-all flex items-center gap-3 group"
               style={{ 
@@ -149,8 +149,8 @@ export function Hero() {
                 <ArrowRight className="w-4 h-4" />
               </motion.div>
             </motion.button>
-          </Link>
-          <Link href="/chat">
+          </a>
+          <a href="/chat">
             <motion.button
               className="px-8 py-4 border-2 rounded-lg font-bold transition-all flex items-center gap-3 backdrop-blur-sm"
               style={{ 
@@ -176,7 +176,7 @@ export function Hero() {
               </motion.div>
               Chat with Electro
             </motion.button>
-          </Link>
+          </a>
         </motion.div>
 
         {/* Key features with enhanced design */}
